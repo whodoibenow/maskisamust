@@ -34,7 +34,7 @@
                         <li class="nav-item">
                             <a href="https://whodoibenow.github.io/portfolio/" class="nav-link">CONTACT</a>
                         </li>
-                        <p>© 2021 SPAM DETECTION by MAS</p>
+                        <p>© 2021 FACE MASK DETECTION by MAS</p>
                         
                     </ul>
 
@@ -54,16 +54,11 @@
                                 
                             <h1>DETECT IF SOMEONE IS WEARING A MASK</h1>
                             <p>Please allow camera access when triggered</p>
-                            <form method="POST" action="{{url_for('mask_image')}}" enctype="multipart/form-data">
-				<input type="file" name='image' class='btn'><br><br><br>
-				<input type="submit" class='btn'>
-			    </form>
+                        
 			    <form action="/upload" method="post" enctype="multipart/form-data" id = "form">
 			      <div align="center" style="margin-top:20px">
 				  <div id="webcam" style="margin-bottom:10px"></div>
 				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="snap()">
-
-
 			      </div>
 			    </form>
 			    <div class="text-center" id="content"></div>
@@ -169,7 +164,7 @@
     
                     <section class="footer-content">
                         
-                        <div class="footertext">© 2021 SPAM DETECTION by MAS</div>
+                        <div class="footertext">© 2021 FACE MASK DETECTION by MAS</div>
                         
                         <div class="socialbox">
                         
