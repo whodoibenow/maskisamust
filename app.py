@@ -1,131 +1,108 @@
-from flask import Flask, render_template_string, request, make_response
-import cv2
+
+
+    
+# import the necessary packages
+from flask import Flask, render_template, request, send_from_directory
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.models import load_model
 import numpy as np
-import datetime
+import argparse
+import cv2
+import os
 
 app = Flask(__name__)
-
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1
 
 @app.route('/')
-def index():
-    return render_template_string('''
-<video id="video" width="320" height="240" autoplay style="background-color: grey"></video>
-<button id="send">Take & Send Photo</button>
-<canvas id="canvas" width="320" height="240" style="background-color: grey"></canvas>
-<img id="image" src="" width="320" height="240" style="background-color: grey"></img>
-<img id="image64" src="" width="320" height="240" style="background-color: grey"></img>
-<script>
-// Elements for taking the snapshot
-var video = document.getElementById('video');
-// Element to display snapshot
-    // you need canvas to get image - canvas can be hidden using `createElement("canvas")`
-    // var canvas = document.createElement("canvas");
-   
-var canvas = document.getElementById('canvas');
-var context = canvas.getContext('2d');
-var image = document.getElementById('image');
-var image64 = document.getElementById('image64');
-// Get access to the camera!
-if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Not adding `{ audio: true }` since we only want video now
-    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
-        //video.src = window.URL.createObjectURL(stream);
-        video.srcObject = stream;
-        video.play();
-    
-        //console.log('setInterval')
-        window.setInterval(function() {
-            //context.drawImage(video, 0, 0);
-            context.drawImage(video, 0, 0, 320, 240); // better use size because camera may gives data in different size then <video> is displaying
-            
-            image64.src = canvas.toDataURL();  
-            canvas.toBlob(upload, "image/jpeg");
-        }, 100);    
-    });
-}
-// Trigger photo take
-document.getElementById("send").addEventListener("click", function() {
-    //context.drawImage(video, 0, 0);
-    context.drawImage(video, 0, 0, 320, 240); // better use size because camera may gives data in different size then <video> is displaying
-    image64.src = canvas.toDataURL();  
-    canvas.toBlob(upload, "image/jpeg");
-});
-function upload(file) {
-    // create form 
-    var formdata =  new FormData();
-    
-    // add file to form
-    formdata.append("snap", file);
-    
-    // create AJAX connection
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "{{ url_for('upload') }}", true);
-    xhr.responseType = 'blob';   
-    // define function which get response
-    xhr.onload = function() {
-        
-        if(this.status = 200) {
-            //console.log(this.response);
-        } else {
-            console.error(xhr);
-        }
-        
-        //alert(this.response);
-        //img.onload = function(){
-        //    ctx.drawImage(img, 0, 0)
-        //}
-        image.src = URL.createObjectURL(this.response); // blob
-    };
-    
-    // send form in AJAX
-    xhr.send(formdata);
-    
-    //image.src = URL.createObjectURL(file);
-}
-    
-</script>
-''')
+def main():
+    return render_template('index.html')
 
-def send_file_data(data, mimetype='image/jpeg', filename='output.jpg'):
-    # https://stackoverflow.com/questions/11017466/flask-to-return-image-stored-in-database/11017839
-    
-    response = make_response(data)
-    response.headers.set('Content-Type', mimetype)
-    response.headers.set('Content-Disposition', 'attachment', filename=filename)
-    
-    return response
-    
-@app.route('/upload', methods=['GET', 'POST'])
-def upload():
-    if request.method == 'POST':
-        #fs = request.files['snap'] # it raise error when there is no `snap` in form
-        fs = request.files.get('snap')
-        if fs:
-            #print('FileStorage:', fs)
-            #print('filename:', fs.filename)
+@app.route('/mask_image', methods=['POST'])
+def mask_image():
+    img = request.files['image']
+    img.save('static/{}.jpg')
+
+	# load face detector model
+    print("Loading face detector model...")
+    prototxtpath = os.path.sep.join(['face_detector', "deploy.prototxt"])
+    weightspath = os.path.sep.join(['face_detector',
+		"res10_300x300_ssd_iter_140000.caffemodel"])
+    net = cv2.dnn.readNet(prototxtpath, weightspath)
+
+	# load the face mask detector model
+    print("Loading face mask detector model...")
+    model = load_model('mask_detection_model.h5')
+
+	# load the input image from disk, clone it, and grab the image spatial
+	# dimensions
+    image = cv2.imread('static/{}.jpg')
+	#image = cv2.imread(img)
+    orig = image.copy()
+    (h, w) = image.shape[:2]
+
+	# construct a blob from the image
+    blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300),
+		(104.0, 177.0, 123.0))
+
+	# pass the blob through the network and obtain the face detections
+    print("Computing face detections...")
+    net.setInput(blob)
+    detections = net.forward()
+
+	# loop over the detections
+    for i in range(0, detections.shape[2]):
+		# extract the confidence (i.e., probability) associated with
+		# the detection
+        confidence = detections[0, 0, i, 2]
+
+		# filter out weak detections by ensuring the confidence is
+		# greater than the minimum confidence
+        if confidence > 0.5:
+			# compute the (x, y)-coordinates of the bounding box for the object
+            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+            (startX, startY, endX, endY) = box.astype("int")
+
+            # ensure the bounding boxes fall within the dimensions of the frame
+            (startX, startY) = (max(0, startX), max(0, startY))
+            (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+
+            # extract the face ROI, convert it from BGR to RGB channel
+            # ordering, resize it to 224x224, and preprocess it
+            face_roi = image[startY:endY, startX:endX]
+            face_roi = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
+            face_roi = cv2.resize(face_roi, (224, 224))
+            face_roi = img_to_array(face_roi)
+            face_roi = preprocess_input(face_roi)
+            face_roi = np.expand_dims(face_roi, axis=0)
+
+            # pass the face through the model to determine if the face has a mask or not
+            pred_final= model.predict(face_roi)
+
+            # determine the class label and color we'll use to draw the bounding box and text            
+            label='No Mask' if pred_final < 0.5 else 'Mask'
+            color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+
+            # include the probability in the label
+            #probability = list(map(lambda x:str(x),pred_final * 100))
+            #label ="{}:{}%".format(label, probability)
             
-            # https://stackoverflow.com/questions/27517688/can-an-uploaded-image-be-loaded-directly-by-cv2
-            # https://stackoverflow.com/a/11017839/1832058
-            img = cv2.imdecode(np.frombuffer(fs.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-            #print('Shape:', img.shape)
-            # rectangle(image, start_point, end_point, color, thickness)
-            img = cv2.rectangle(img, (20, 20), (300, 220), (0, 0, 255), 2)
-            
-            text = datetime.datetime.now().strftime('%Y.%m.%d %H.%M.%S.%f')
-            img = cv2.putText(img, text, (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA) 
-            #cv2.imshow('image', img)
-            #cv2.waitKey(1)
-            
-            # https://jdhao.github.io/2019/07/06/python_opencv_pil_image_to_bytes/
-            ret, buf = cv2.imencode('.jpg', img)
-            
-            #return f'Got Snap! {img.shape}'
-            return send_file_data(buf.tobytes())
-        else:
-            return 'You forgot Snap!'
-    
-    return 'Hello World!'
-    
-    
-if __name__ == '__main__':    
-    app.run(debug=True, port=5000)
+
+            # display the label and bounding box rectangle on the output frame
+            cv2.putText(image, label, (startX, startY - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+            cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+
+	# show the output image
+    #cv2.imshow("Output", image)
+    #cv2.waitKey(0)
+    filename='static/image.jpg'
+    cv2.imwrite(filename, image)
+    return render_template('prediction.html')
+	
+@app.route('/load_img')
+def load_img():
+    return send_from_directory('static', "image.jpg")
+
+if __name__ == '__main__':
+    app.run(debug=True)
