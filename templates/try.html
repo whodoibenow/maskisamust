@@ -55,13 +55,10 @@
                             <h1>DETECT IF SOMEONE IS WEARING A MASK</h1>
                             <p>Please allow camera access when triggered</p>
                         
-			    <form action="/mask_image" method="post" enctype="multipart/form-data" id = "form">
-			      <div align="center" style="margin-top:20px">
-				  <div id="webcam" style="margin-bottom:10px"></div>
-				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="take_snapshot()">
-			      </div>
-			    </form>
-			    <div class="text-center" id="results"></div>
+			    <video id="video" width="640" height="480" autoplay style="background-color: grey"></video>
+			    <button id="send">Take & Send Photo</button>
+			    <canvas id="canvas" width="640" height="480" style="background-color: grey"></canvas>
+
 
                             <a href="#secondpage">
                                 <div class="arrow"></div>
@@ -226,45 +223,48 @@
 
     
 </body>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-    <script language="JavaScript">
-	    Webcam.set({
-        width: 320,
-        height: 240,
-        image_format: 'jpeg',
-        jpeg_quality: 90
+<script>
+
+// Elements for taking the snapshot
+var video = document.getElementById('video');
+var canvas = document.getElementById('canvas');
+var context = canvas.getContext('2d');
+
+// Get access to the camera!
+if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+        //video.src = window.URL.createObjectURL(stream);
+        video.srcObject = stream;
+        video.play();
     });
-    Webcam.attach('#webcam');
+}
 
-    function getHTMLTemplate(bodyFormData) {
-      $("#button").prop('disabled', true);
-      
+// Trigger photo take
+document.getElementById("send").addEventListener("click", function() {
+    context.drawImage(video, 0, 0, 640, 480);
+    canvas.toBlob(upload, "image/jpeg");
+});
 
-      return axios.post( '/mask_image',
-            bodyFormData,
-            {
-              headers: {
-                  'Content-Type': 'multipart/form-data'
-              }
-            }
-          ).then(response => {
-            this.response = response.data
-           
-            return this.response
-          })
+function upload(file) {
+    var formdata =  new FormData();
+    formdata.append("snap", file);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "{{ url_for('mask_image') }}", true);
+    xhr.onload = function() {
+        if(this.status = 200) {
+            console.log(this.response);
+        } else {
+            console.error(xhr);
+        }
+        alert(this.response);
     };
-
-            
-
-            function take_snapshot() {
-			// take snapshot and get image data
-			Webcam.snap( function(data_uri) {
-				// display results in page
-          var file =  data_uri;
-          var bodyFormData = new FormData();
-          bodyFormData.append('image', file);
-
-            
+    xhr.send(formdata);
+}
 
 </script>
+		
+
+    
 </html>
