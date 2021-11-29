@@ -21,7 +21,7 @@
                   <div id="webcam" style="margin-bottom:10px"></div>
                   <input id="button" type="button" value="Check" class="btn btn-primary" onclick="snap()">
                   
-                  </div>
+                  
               </div>
             </form>
             <div class="text-center" id="content"></div>
@@ -37,7 +37,7 @@
                     image_format: 'jpeg',
                     jpeg_quality: 100
                 });
-                Webcam.attach('#my_camera');
+                Webcam.attach('#webcam');
             }
             window.onload= ShowCam;
 
