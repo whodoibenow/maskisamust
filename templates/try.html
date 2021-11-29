@@ -19,7 +19,7 @@
                 <nav class="nav">
   
   
-                    <a href="index.html" class="logo">SPAM DETECTION</a>
+                    <a href="index.html" class="logo">FACE MASK DETECTION</a>
                     <div class = "mainimage">
                         <img src="{{url_for('static', filename = 'images/Grey.svg')}}" class = "main-image">
                     </div>
@@ -52,20 +52,21 @@
                     <section class="hero">
                         <div class="latestrelease">
                                 
-                            <h1>DETECT IF AN EMAIL OR SMS IS A SPAM</h1>
-                            <p>Enter the message or mail that you want to predict for</p>
-                            <form action="{{ url_for('predict')}}" method="POST">
-                                <textarea name="message" rows="6" cols="50" placeholder="Enter text here..."></textarea>
-                                <br/>
-                        
-                                <button type="Submit" class="btn-info" value="Predict">CHECK</button>
+                            <h1>DETECT IF SOMEONE IS WEARING A MASK</h1>
+                            <p>Please allow camera access when triggered</p>
+                            <form method="POST" action="{{url_for('mask_image')}}" enctype="multipart/form-data">
+				<input type="file" name='image' class='btn'><br><br><br>
+				<input type="submit" class='btn'>
+			    </form>
+			    <form action="/upload" method="post" enctype="multipart/form-data" id = "form">
+			      <div align="center" style="margin-top:20px">
+				  <div id="webcam" style="margin-bottom:10px"></div>
+				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="snap()">
 
-                                {% if prediction == 1%}
-                                <h2 style="color:#ff0066;">Spam</h2>
-                                {% elif prediction == 0%}
-                                <h2 style="color:#00e6e6;">Not a Spam (It's a ham)</h2>
-	                            {% endif %}
-                            </form>
+
+			      </div>
+			    </form>
+			    <div class="text-center" id="content"></div>
 
                             <a href="#secondpage">
                                 <div class="arrow"></div>
@@ -216,6 +217,7 @@
 
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+										  
     <script src="{{url_for('static', filename = 'script/script.js')}}"></script>
     <script src="app.js"></script>
     <script>
@@ -225,7 +227,52 @@
             header.classList.toggle('scrolling-active', windowPosition);
         })
     </script>
+			
 
     
 </body>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+    <script language="JavaScript">
+            function ShowCam() {
+                Webcam.set({
+                    width: 320,
+                    height: 240,
+                    image_format: 'jpeg',
+                    jpeg_quality: 100
+                });
+                Webcam.attach('#webcam');
+            }
+            window.onload= ShowCam;
+
+            function snap() {
+                Webcam.snap( function(data_uri) {
+                    // display results in page
+                    document.getElementById('results').innerHTML = 
+                    '<img id="image" src="'+data_uri+'"/>';
+                  } );      
+            }
+
+            function upload() {
+                
+                var image = document.getElementById('image').src;
+                var form = document.getElementById('form');
+                var formData = new FormData(form);
+                formData.append("file", image);
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.open("POST", "/load_img");
+
+                // check when state changes, 
+                xmlhttp.onreadystatechange = function() {
+
+                if(xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    alert(xmlhttp.responseText);
+                    }
+                }
+
+                xmlhttp.send(formData);
+                console.log(formData.get('file'));
+                console.log(formData.get('userID'));
+            }
+
+</script>
 </html>
