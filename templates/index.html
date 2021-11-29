@@ -1,11 +1,12 @@
-<form action="/mask_image" method="POST" enctype="multipart/form-data" >
+<form method="POST" enctype="multipart/form-data" id = "myForm" >
           <div align="center" style="margin-top:20px">
               <div id="webcam" style="margin-bottom:10px"></div>
               <input id="boton" type="button" value="Check" class="btn btn-primary" onclick="take_snapshot()">
               
           </div>
 </form>
-
+<div id="results" ></div>
+<input type="button" value="Upload" onclick="upload()">
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
 
 <!-- Configure a few settings and attach camera -->
@@ -25,7 +26,28 @@ function take_snapshot() {
    Webcam.snap( function(data_uri) {
        // display results in page
        document.getElementById('results').innerHTML = 
-        '<img src="'+data_uri+'"/>';
+        '<img id = "image" src="'+data_uri+'"/>';
     } );
+}
+function upload() {
+    console.log("Uploading...")
+    var image = document.getElementById('image').src;
+    var form = document.getElementById('myForm');
+    var formData = new FormData(form);
+    formData.append("file", image);
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", "/mask_image");
+
+    // check when state changes, 
+    xmlhttp.onreadystatechange = function() {
+
+    if(xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert(xmlhttp.responseText);
+        }
+    }
+
+    xmlhttp.send(formData);
+    console.log(formData.get('file'));
+    console.log(formData.get('userID'));
 }
 </script>
