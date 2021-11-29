@@ -55,9 +55,10 @@
                             <h1>DETECT IF SOMEONE IS WEARING A MASK</h1>
                             <p>Please allow camera access when triggered</p>
                         
-			    <video id="video" width="640" height="480" autoplay style="background-color: grey"></video>
-			    <button id="send">Take & Send Photo</button>
-			    <canvas id="canvas" width="640" height="480" style="background-color: grey"></canvas>
+			    <form method="POST" action="{{url_for('mask_image')}}" enctype="multipart/form-data">
+				    <input type="file" name='image' class='btn'><br><br><br>
+				    <input type="submit" class='btn'>
+			    </form>
 
 
                             <a href="#secondpage">
