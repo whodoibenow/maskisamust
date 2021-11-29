@@ -58,7 +58,7 @@
 			    <form action="/mask_image" method="post" enctype="multipart/form-data" id = "form">
 			      <div align="center" style="margin-top:20px">
 				  <div id="webcam" style="margin-bottom:10px"></div>
-				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="snap()">
+				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="take_snapshot()">
 			      </div>
 			    </form>
 			    <div class="text-center" id="results"></div>
@@ -256,13 +256,13 @@
 
             
 
-            function snap() {
-                Webcam.snap( function(data_uri) {
-                    // display results in page
-                    document.getElementById('results').innerHTML = 
-                    '<img id="image" src="'+data_uri+'"/>';
-                  } );      
-            }
+            function take_snapshot() {
+			// take snapshot and get image data
+			Webcam.snap( function(data_uri) {
+				// display results in page
+          var file =  data_uri;
+          var bodyFormData = new FormData();
+          bodyFormData.append('image', file);
 
             
 
