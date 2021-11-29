@@ -228,16 +228,33 @@
 </body>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
     <script language="JavaScript">
-            function ShowCam() {
-                Webcam.set({
-                    width: 320,
-                    height: 240,
-                    image_format: 'jpeg',
-                    jpeg_quality: 100
-                });
-                Webcam.attach('#webcam');
+	    Webcam.set({
+        width: 320,
+        height: 240,
+        image_format: 'jpeg',
+        jpeg_quality: 90
+    });
+    Webcam.attach('#webcam');
+
+    function getHTMLTemplate(bodyFormData) {
+      $("#button").prop('disabled', true);
+      
+
+      return axios.post( '/mask_image',
+            bodyFormData,
+            {
+              headers: {
+                  'Content-Type': 'multipart/form-data'
+              }
             }
-            window.onload= ShowCam;
+          ).then(response => {
+            this.response = response.data
+           
+            return this.response
+          })
+    };
+
+            
 
             function snap() {
                 Webcam.snap( function(data_uri) {
