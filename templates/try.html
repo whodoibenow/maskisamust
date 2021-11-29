@@ -55,7 +55,7 @@
                             <h1>DETECT IF SOMEONE IS WEARING A MASK</h1>
                             <p>Please allow camera access when triggered</p>
                         
-			    <form action="/upload" method="post" enctype="multipart/form-data" id = "form">
+			    <form action="{{url_for('mask_image')}}" method="post" enctype="multipart/form-data" id = "form">
 			      <div align="center" style="margin-top:20px">
 				  <div id="webcam" style="margin-bottom:10px"></div>
 				  <input id="button" type="button" value="Check" class="btn btn-primary" onclick="snap()">
@@ -247,27 +247,7 @@
                   } );      
             }
 
-            function upload() {
-                
-                var image = document.getElementById('image').src;
-                var form = document.getElementById('form');
-                var formData = new FormData(form);
-                formData.append("file", image);
-                var xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("POST", "/load_img");
-
-                // check when state changes, 
-                xmlhttp.onreadystatechange = function() {
-
-                if(xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                    alert(xmlhttp.responseText);
-                    }
-                }
-
-                xmlhttp.send(formData);
-                console.log(formData.get('file'));
-               
-            }
+            
 
 </script>
 </html>
