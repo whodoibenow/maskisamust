@@ -16,7 +16,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 1
 
 @app.route('/')
 def main():
-    return render_template('try.html')
+    return render_template('index.html')
 
 @app.route('/mask_image', methods=['POST'])
 def mask_image():
